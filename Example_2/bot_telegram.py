@@ -2,7 +2,7 @@ import aiogram
 from aiogram import Bot, types 
 from aiogram.dispatcher import Dispatcher 
 from aiogram.utils import executor
-import os
+import os, json, string
 
 bot = Bot(token=os.getenv('TOKEN'))
 dp = Dispatcher(bot)
@@ -40,11 +40,12 @@ async def pizza_place_command(message : types.Message):
 
 @dp.message_handler()
 async def echo_send(message : types.Message):
-	if message.text == 'Hello':
-		await message.answer('hello to you too!')
-
-	# await message.reply(message.text)
-	# await bot.send_message(message.from_user.id, message.text)
+	if {i.lower().translate(str.maketrans('', '', string.punctuation)) for i in message.text.split(" ")}\
+		.intersection(set(json.load(open('cenz.json')))) != set():
+		await message.delete()
+		await bot.send_message(message.chat.id, f'{message.from_user.first_name} --> Swearing is forbidden!')
+		
+		
 
 
 
