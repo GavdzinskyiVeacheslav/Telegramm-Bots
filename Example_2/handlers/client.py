@@ -1,11 +1,12 @@
 from aiogram import types, Dispatcher
 from create_bot import dp, bot
-
+from keyboards import kb_client
+from aiogram.types import ReplyKeyboardRemove
 
 #@dp.message_handler(commands=['start', 'help'])
 async def command_start(message : types.Message):
 	try:
-		await bot.send_message(message.from_user.id, 'Bon appetit!')
+		await bot.send_message(message.from_user.id, 'Bon appetit!', reply_markup=kb_client )
 		await message.delete()
 	except:
 		await message.reply('Сommunication with the bot via PM, write to him:\nhttps://t.me/Pizza_Sheef114455bot')
@@ -16,7 +17,7 @@ async def pizza_open_command(message : types.Message):
 
 #@dp.message_handler(commands=['Address'])
 async def pizza_place_command(message : types.Message):
-	await bot.send_message(message.from_user.id, 'st. Sausage 15')
+	await bot.send_message(message.from_user.id, 'st. Sausage 15', reply_markup=ReplyKeyboardRemove())
 
 
 # @dp.message_handler(commands=['Menu'])
