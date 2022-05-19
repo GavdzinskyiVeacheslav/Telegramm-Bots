@@ -3,6 +3,9 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram import types, Dispatcher
 from create_bot import dp, bot
 from aiogram.dispatcher.filters import Text
+from data_base import sqlite_db
+from keyboards import admin_kb
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 ID = None
 
@@ -12,12 +15,13 @@ class FSMAdmin(StatesGroup):
 	description = State()
 	price = State()
 
+
 # Get current moderator id
 # @dp.message_handler(commands=['moderator'], is_chat_admin=True)
 async def make_changes_command(message: types.Message):
 	global ID 
 	ID = message.from_user.id
-	await bot.send_message(message.from_user.id, "What do you want my master?") #, reply_markup=button_case_admin
+	await bot.send_message(message.from_user.id, "What do you want my master?", reply_markup=admin_kb.button_case_admin)
 	await message.delete()
 
 # Starting the dialog for loading a new menu item
@@ -74,9 +78,22 @@ async def load_price(message : types.Message, state : FSMContext):
 		async with state.proxy() as data:
 			data['price'] = float(message.text)
 
-		async with state.proxy() as data:
-			await message.reply(str(data))
+		await sqlite_db.sql_add_command(state)
 		await state.finish()
+
+@dp.callback_query_handler(lambda x: x.data and x.data.startswith('del '))
+async def del_callback_run(callback_query: types.CallbackQuery):
+	await sqlite_db.sql_delete_command(callback_query.data.replace('del ', ''))
+	await callback_query.answer(text=f'{callback_query.data.replace("del ", "")} deleted.', show_alert=True)
+
+@dp.message_handler(commands='Delete')
+async def delete_item(message: types.Message):
+	if message.from_user.id == ID:
+		read = await sqlite_db.sql_read2()
+		for ret in read:
+			await bot.send_photo(message.from_user.id, ret[0], f'{ret[1]}\nDescription: {ret[2]}\nPrice {ret[-1]}')
+			await bot.send_message(message.from_user.id, text='^^^', reply_markup=InlineKeyboardMarkup().\
+				add(InlineKeyboardButton(f'Delete {ret[1]}', callback_data=f'del {ret[1]}')))
 
 
 # Registering Handlers
@@ -89,6 +106,8 @@ def register_handlers_admin(dp : Dispatcher):
 	dp.register_message_handler(load_description, state=FSMAdmin.description)
 	dp.register_message_handler(load_price, state=FSMAdmin.price)
 	dp.register_message_handler(make_changes_command, commands=['moderator'], is_chat_admin=True)
+ 	
 	
+
 
 
